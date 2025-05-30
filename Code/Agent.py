@@ -4,6 +4,9 @@ import numpy as np
 from collections import deque
 from Game import SnakeGameAI, Direction
 from Model import Q_Net,Q_Trainer
+import matplotlib.pyplot as plt
+from IPython import display
+
 
 class Agent:
 
@@ -125,3 +128,4 @@ def train():
                 agent.model.save()
 
             print(f'Game: {agent.number_of_games}, Score: {score}, Record: {record_score}')
+            plot()
