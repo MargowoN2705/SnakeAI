@@ -1,12 +1,14 @@
 import pygame
 from enum import Enum
 import random
+import numpy as np
 
 class Direction(Enum):
     UP = 1
     DOWN = 2
     LEFT = 3
     RIGHT = 4
+
 
 class SnakeGameAI:
 
@@ -22,8 +24,11 @@ class SnakeGameAI:
         pygame.display.set_caption('Snake AI')
         self.clock = pygame.time.Clock()
 
-        self.direction = Direction.RIGHT
+        self.reset()
 
+
+    def reset (self):
+        self.direction = Direction.RIGHT
 
         x = self.w // 2
         y = self.h // 2
@@ -37,28 +42,34 @@ class SnakeGameAI:
         self.food = None
         self._place_food()
 
-    def _place_food(self):
+        self.frame_iteration = 0
 
+    def _place_food(self):
         x = random.randint(0, (self.w - self.BOX_SIZE) // self.BOX_SIZE) * self.BOX_SIZE
         y = random.randint(0, (self.h - self.BOX_SIZE) // self.BOX_SIZE) * self.BOX_SIZE
         self.food = (x, y)
         if self.food in self.snake:
             self._place_food()
 
-    def play_step(self):
+    def play_step(self,action):
+        self.frame_iteration +=1
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 quit()
-            elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_LEFT and self.direction != Direction.RIGHT:
-                    self.direction = Direction.LEFT
-                elif event.key == pygame.K_RIGHT and self.direction != Direction.LEFT:
-                    self.direction = Direction.RIGHT
-                elif event.key == pygame.K_UP and self.direction != Direction.DOWN:
-                    self.direction = Direction.UP
-                elif event.key == pygame.K_DOWN and self.direction != Direction.UP:
-                    self.direction = Direction.DOWN
+
+
+        clock_wise = [Direction.RIGHT,Direction.DOWN,Direction.LEFT,Direction.UP]
+        idx = clock_wise.index(self.direction)
+
+        if np.array_equal(action,[1,0,0]):
+            new_dir = clock_wise[idx]
+        elif np.array_equal(action, [0, 1, 0]):
+            new_dir = clock_wise[(idx+1)%4]
+        elif np.array_equal(action, [0, 0, 1]):
+            new_dir = clock_wise[(idx-1)%4]
+
+        self.direction = new_dir
 
         x, y = self.head
         if self.direction == Direction.RIGHT:
@@ -72,21 +83,32 @@ class SnakeGameAI:
         self.head = (x, y)
         self.snake.insert(0, self.head)
 
+        reward = 0
 
+        # Sprawdzenie zjedzenia jedzenia
         if self.head == self.food:
             self.score += 1
             self._place_food()
+            reward = 10
         else:
             self.snake.pop()  # Usuń ogon, jeśli nie zjadł
 
+        # Kolizje
+        if self.is_collision() or self.frame_iteration > 100*len(self.snake):
+            game_over =  True
+            reward = -10
 
-        if (x < 0 or x >= self.w or y < 0 or y >= self.h or self.head in self.snake[1:]):
-            return True
-
-
+        # Rysowanie
         self._update_ui()
         self.clock.tick(self.SPEED)
-        return False
+        game_over =  False  # Gra trwa dalej
+
+        return game_over,self.score,reward
+
+    def is_collision(self,pt = None):
+        if pt is None:
+            x, y = self.head
+        return x < 0 or x >= self.w or y < 0 or y >= self.h or self.head in self.snake[1:]
 
     def _update_ui(self):
         white = (255, 255, 255)
@@ -107,3 +129,13 @@ class SnakeGameAI:
         pygame.display.flip()
 
 
+if __name__ == '__main__':
+    game = SnakeGameAI()
+
+    while True:
+        game_over = game.play_step()
+        if game_over:
+            break
+
+    print('Game Over! Your score:', game.score)
+    pygame.quit()
