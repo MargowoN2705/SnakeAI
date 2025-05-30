@@ -6,7 +6,7 @@ from Game import SnakeGameAI, Direction
 from Model import Q_Net,Q_Trainer
 import matplotlib.pyplot as plt
 from IPython import display
-
+plt.ion()
 
 class Agent:
 
@@ -100,6 +100,21 @@ class Agent:
 
         return final_move
 
+def plot(scores, mean_scores):
+    display.clear_output(wait=True)
+    display.display(plt.gcf())
+    plt.clf()
+    plt.title('Trening')
+    plt.xlabel('Liczba gier')
+    plt.ylabel('Wynik')
+    plt.plot(scores, label='Wynik')
+    plt.plot(mean_scores, label='Średni wynik')
+    plt.legend()
+    plt.ylim(ymin=0)
+    plt.text(len(scores)-1, scores[-1], str(scores[-1]))
+    plt.text(len(mean_scores)-1, mean_scores[-1], str(mean_scores[-1]))
+    plt.pause(0.1)
+
 
 def train():
     plot_scores = []
@@ -128,4 +143,8 @@ def train():
                 agent.model.save()
 
             print(f'Game: {agent.number_of_games}, Score: {score}, Record: {record_score}')
-            plot()
+            plot_scores.append(score)
+            total_score += score
+            mean_score = total_score / agent.number_of_games
+            plot_mean_scores.append(mean_score)
+            plot(plot_scores, plot_mean_scores)
