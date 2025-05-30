@@ -9,7 +9,6 @@ class Direction(Enum):
     LEFT = 3
     RIGHT = 4
 
-
 class SnakeGameAI:
 
     def __init__(self, h=480, w=640):
@@ -26,8 +25,7 @@ class SnakeGameAI:
 
         self.reset()
 
-
-    def reset (self):
+    def reset(self):
         self.direction = Direction.RIGHT
 
         x = self.w // 2
@@ -51,23 +49,23 @@ class SnakeGameAI:
         if self.food in self.snake:
             self._place_food()
 
-    def play_step(self,action):
-        self.frame_iteration +=1
+    def play_step(self, action):
+        self.frame_iteration += 1
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 quit()
 
-
-        clock_wise = [Direction.RIGHT,Direction.DOWN,Direction.LEFT,Direction.UP]
+        clock_wise = [Direction.RIGHT, Direction.DOWN, Direction.LEFT, Direction.UP]
         idx = clock_wise.index(self.direction)
 
-        if np.array_equal(action,[1,0,0]):
-            new_dir = clock_wise[idx]
+        if np.array_equal(action, [1, 0, 0]):
+            new_dir = clock_wise[idx]  # prosto
         elif np.array_equal(action, [0, 1, 0]):
-            new_dir = clock_wise[(idx+1)%4]
-        elif np.array_equal(action, [0, 0, 1]):
-            new_dir = clock_wise[(idx-1)%4]
+            new_dir = clock_wise[(idx + 1) % 4]  # w prawo (obrót o 90 stopni)
+        else:  # [0, 0, 1]
+            new_dir = clock_wise[(idx - 1) % 4]  # w lewo (obrót o 90 stopni)
 
         self.direction = new_dir
 
@@ -80,35 +78,39 @@ class SnakeGameAI:
             y += self.BOX_SIZE
         elif self.direction == Direction.UP:
             y -= self.BOX_SIZE
+
         self.head = (x, y)
         self.snake.insert(0, self.head)
 
         reward = 0
+        game_over = False
 
-        # Sprawdzenie zjedzenia jedzenia
+        if self.is_collision() or self.frame_iteration > 100 * len(self.snake):
+            game_over = True
+            reward = -10
+            return game_over, self.score, reward
+
         if self.head == self.food:
             self.score += 1
             self._place_food()
             reward = 10
         else:
-            self.snake.pop()  # Usuń ogon, jeśli nie zjadł
+            self.snake.pop()
 
-        # Kolizje
-        if self.is_collision() or self.frame_iteration > 100*len(self.snake):
-            game_over =  True
-            reward = -10
-
-        # Rysowanie
         self._update_ui()
         self.clock.tick(self.SPEED)
-        game_over =  False  # Gra trwa dalej
 
-        return game_over,self.score,reward
+        return game_over, self.score, reward
 
-    def is_collision(self,pt = None):
+    def is_collision(self, pt=None):
         if pt is None:
-            x, y = self.head
-        return x < 0 or x >= self.w or y < 0 or y >= self.h or self.head in self.snake[1:]
+            pt = self.head
+        x, y = pt
+        if x < 0 or x >= self.w or y < 0 or y >= self.h:
+            return True
+        if pt in self.snake[1:]:
+            return True
+        return False
 
     def _update_ui(self):
         white = (255, 255, 255)
@@ -129,13 +131,4 @@ class SnakeGameAI:
         pygame.display.flip()
 
 
-if __name__ == '__main__':
-    game = SnakeGameAI()
 
-    while True:
-        game_over = game.play_step()
-        if game_over:
-            break
-
-    print('Game Over! Your score:', game.score)
-    pygame.quit()
