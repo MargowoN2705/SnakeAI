@@ -3,7 +3,7 @@ import random
 import numpy as np
 from collections import deque
 from Game import SnakeGameAI, Direction
-
+from Model import Q_Net,Q_Trainer
 
 class Agent:
 
@@ -16,8 +16,9 @@ class Agent:
         self.epsilon = 0
         self.gamma = 0.9  # discount rate
         self.memory = deque(maxlen=self.MAX_MEMORY)
-        self.model = None  # TODO: Initialize model
-        self.trainer = None  # TODO: Initialize trainer
+        self.model = Q_Net(11,256,3)
+
+        self.trainer = Q_Trainer(self.model,lr=self.LR,gamma=self.gamma)
 
     def get_state(self, game):
         head = game.snake[0]
@@ -121,6 +122,6 @@ def train():
 
             if score > record_score:
                 record_score = score
-                # agent.model.save()  # Optionally save best model
+                agent.model.save()
 
             print(f'Game: {agent.number_of_games}, Score: {score}, Record: {record_score}')
