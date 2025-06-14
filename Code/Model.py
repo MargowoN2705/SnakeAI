@@ -29,12 +29,24 @@ class Q_Net(nn.Module):
         os.makedirs(model_folder_path, exist_ok=True)
         file_path = os.path.join(model_folder_path, file_name)
 
+        self.input_size = self.linear_1.in_features  # dodaj to, jeśli nie masz zainicjalizowanej input_size
 
-        dummy_input = torch.randn(1, self.input_size)
+        # Uwaga: dodaj dodatkowe wymiary: NCHW = [1, 1, 1, input_size]
+        dummy_input = torch.randn(1, 1, 1, self.input_size)
 
+        class WrappedModel(nn.Module):
+            def __init__(self, base_model):
+                super().__init__()
+                self.base_model = base_model
+
+            def forward(self, x):
+                x = x.view(x.size(0), -1)  # rozbij z [1,1,1,11] na [1,11]
+                return self.base_model(x)
+
+        wrapped = WrappedModel(self)
 
         torch.onnx.export(
-            self,
+            wrapped,
             dummy_input,
             file_path,
             input_names=["input"],
