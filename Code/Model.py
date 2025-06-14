@@ -23,13 +23,32 @@ class Q_Net(nn.Module):
         file_path = os.path.join(model_folder_path, file_name)
         torch.save(self.state_dict(), file_path)
 
+    def save_as_onnx(self, file_name='model.onnx'):
+        self.eval()
+        model_folder_path = './model'
+        os.makedirs(model_folder_path, exist_ok=True)
+        file_path = os.path.join(model_folder_path, file_name)
+
+
+        dummy_input = torch.randn(1, self.input_size)
+
+
+        torch.onnx.export(
+            self,
+            dummy_input,
+            file_path,
+            input_names=["input"],
+            output_names=["output"],
+            opset_version=12
+        )
+
 
 class Q_Trainer:
     def __init__(self, model, lr, gamma):
         self.lr = lr
         self.model = model
         self.gamma = gamma
-        self.optimizer = optim.SGD(self.model.parameters(), lr=self.lr)
+        self.optimizer = optim.Adam(self.model.parameters(), lr=self.lr)
         self.criterion = nn.MSELoss()
 
     def train_step(self, state, action, reward, next_state, game_over):
