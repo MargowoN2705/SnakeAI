@@ -141,6 +141,7 @@ def train():
             if score > record_score:
                 record_score = score
                 agent.model.save()
+                agent.model.save_as_onnx()
 
             print(f'Game: {agent.number_of_games}, Score: {score}, Record: {record_score}')
             plot_scores.append(score)

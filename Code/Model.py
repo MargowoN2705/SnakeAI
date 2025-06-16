@@ -6,6 +6,7 @@ import os
 class Q_Net(nn.Module):
     def __init__(self, input_size, hidden_size, output_size):
         super().__init__()
+        self.input_size = input_size
         self.linear_1 = nn.Linear(input_size, hidden_size)
         self.relu = nn.ReLU()
         self.linear_2 = nn.Linear(hidden_size, output_size)
@@ -23,30 +24,16 @@ class Q_Net(nn.Module):
         file_path = os.path.join(model_folder_path, file_name)
         torch.save(self.state_dict(), file_path)
 
-    def save_as_onnx(self, file_name='model.onnx'):
+    def save_as_onnx(self, file_name='model_best.onnx'):
         self.eval()
         model_folder_path = './model'
         os.makedirs(model_folder_path, exist_ok=True)
         file_path = os.path.join(model_folder_path, file_name)
 
-        self.input_size = self.linear_1.in_features  # dodaj to, jeśli nie masz zainicjalizowanej input_size
-
-        # Uwaga: dodaj dodatkowe wymiary: NCHW = [1, 1, 1, input_size]
-        dummy_input = torch.randn(1, 1, 1, self.input_size)
-
-        class WrappedModel(nn.Module):
-            def __init__(self, base_model):
-                super().__init__()
-                self.base_model = base_model
-
-            def forward(self, x):
-                x = x.view(x.size(0), -1)  # rozbij z [1,1,1,11] na [1,11]
-                return self.base_model(x)
-
-        wrapped = WrappedModel(self)
+        dummy_input = torch.randn(1, self.input_size)  # [batch_size, input_size]
 
         torch.onnx.export(
-            wrapped,
+            self,
             dummy_input,
             file_path,
             input_names=["input"],

@@ -17,7 +17,7 @@ class SnakeGameAI:
         self.w = w
 
         self.BOX_SIZE = 20
-        self.SPEED = 20
+        self.SPEED = 40
 
         self.display = pygame.display.set_mode((self.w, self.h))
         pygame.display.set_caption('Snake AI')
